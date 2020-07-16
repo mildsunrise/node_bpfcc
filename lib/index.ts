@@ -32,6 +32,11 @@ export interface USDT {
     matchingKludge?: number
 }
 
+export enum ProbeAttachType {
+    ENTRY,
+    RETURN,
+}
+
 export interface Options {
     cflags?: string[]
     usdt?: USDT[]
@@ -42,10 +47,97 @@ export class BPF {
     constructor() {
         this._bpf = new native.BPF()
     }
+
     init(program: string, cflags: string[], usdt: USDT[]) {
         return checkStatus(this._bpf.init(program, cflags, usdt))
     }
 
+    initUsdt(usdt: USDT) {
+        return checkStatus(this._bpf.initUsdt(usdt))
+    }
+
+    detachAll() {
+        return checkStatus(this._bpf.detachAll())
+    }
+
+    attachKprobe(kernelFunc: string, probeFunc: string, options?: { kernelFuncOffset?: bigint, attachType?: ProbeAttachType, maxActive?: number }) {
+        options = options || {}
+        return checkStatus(this._bpf.attachKprobe(
+            kernelFunc, probeFunc, options.kernelFuncOffset,
+            options.attachType, options.maxActive
+        ))
+    }
+
+    detachKprobe(kernelFunc: string, options?: { attachType?: ProbeAttachType }) {
+        options = options || {}
+        return checkStatus(this._bpf.detachKprobe(kernelFunc, options.attachType))
+    }
+
+    attachUprobe(binaryPath: string, symbol: string, probeFunc: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
+        options = options || {}
+        return checkStatus(this._bpf.attachUprobe(
+            binaryPath, symbol, probeFunc, options.symbolAddr,
+            options.attachType, options.pid, options.symbolOffset
+        ))
+    }
+
+    detachUprobe(binaryPath: string, symbol: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
+        options = options || {}
+        return checkStatus(this._bpf.detachUprobe(
+            binaryPath, symbol, options.symbolAddr,
+            options.attachType, options.pid, options.symbolOffset
+        ))
+    }
+
+    attachUsdt(usdt: USDT, options?: { pid?: number }) {
+        options = options || {}
+        return checkStatus(this._bpf.attachUsdt(usdt, options.pid))
+    }
+
+    attachUsdtAll() {
+        return checkStatus(this._bpf.attachUsdtAll())
+    }
+
+    detachUsdt(usdt: USDT, options?: { pid?: number }) {
+        options = options || {}
+        return checkStatus(this._bpf.detachUsdt(usdt, options.pid))
+    }
+
+    detachUsdtAll() {
+        return checkStatus(this._bpf.detachUsdtAll())
+    }
+
+    attachTracepoint(tracepoint: string, probeFunc: string) {
+        return checkStatus(this._bpf.attachTracepoint(tracepoint, probeFunc))
+    }
+
+    detachTracepoint(tracepoint: string) {
+        return checkStatus(this._bpf.detachTracepoint(tracepoint))
+    }
+
+    attachRawTracepoint(tracepoint: string, probeFunc: string) {
+        return checkStatus(this._bpf.attachRawTracepoint(tracepoint, probeFunc))
+    }
+
+    detachRawTracepoint(tracepoint: string) {
+        return checkStatus(this._bpf.detachRawTracepoint(tracepoint))
+    }
+
+    attachPerfEvent(evType: number, evConfig: number, probeFunc: string, samplePeriod: bigint, sampleFreq: bigint, options?: { pid?: number, cpu?: number, groupFd?: number }) {
+        options = options || {}
+        return checkStatus(this._bpf.attachPerfEvent(
+            evType, evConfig, probeFunc,
+            samplePeriod, sampleFreq, options.pid, options.cpu, options.groupFd
+        ))
+    }
+
+    detachPerfEvent(evType: number, evConfig: number) {
+        return checkStatus(this._bpf.detachPerfEvent(evType, evConfig))
+    }
+
+    getSyscallFnName(name: string): string {
+        return this._bpf.getSyscallFnName(name)
+    }
 }
 
 export function init(program: string, options?: Options) {
