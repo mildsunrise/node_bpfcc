@@ -83,7 +83,9 @@ class BPF : public Napi::ObjectWrap<BPF> {
   public:
     static Napi::Object Init(Napi::Env env, Napi::Object exports) {
         Napi::Function func = DefineClass(env, "BPF", {
-            InstanceMethod<&BPF::InitBPF>("init"),
+            InstanceMethod<&BPF::InitSync>("initSync"),
+            InstanceMethod<&BPF::InitAsync>("initAsync"),
+
             InstanceMethod<&BPF::InitUsdt>("initUsdt"),
 
             InstanceMethod<&BPF::DetachAll>("detachAll"),
@@ -124,7 +126,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
   private:
     ebpf::BPF bpf;
 
-    Napi::Value InitBPF(const CallbackInfo& info) {
+    Napi::Value InitSync(const CallbackInfo& info) {
         Napi::Env env = info.Env();
         size_t a = 0;
         auto program = GetString(env, info[a++]);
@@ -141,6 +143,52 @@ class BPF : public Napi::ObjectWrap<BPF> {
             usdt_.push_back(ParseUSDT(env, item));
         }
         return WrapStatus(env, bpf.init(program, cflags_, usdt_));
+    }
+
+    class InitWorker : public Napi::AsyncWorker {
+      public:
+        InitWorker(BPF& bpf, Napi::Function& callback,
+            const std::string& program,
+            const std::vector<std::string>& cflags,
+            const std::vector<ebpf::USDT>& usdt)
+        : AsyncWorker(bpf.Value(), callback, "bpfcc.load"),
+        bpf(bpf.bpf), status(ebpf::StatusTuple::OK()),
+        program(program), cflags(cflags), usdt(usdt) {}
+
+        ebpf::BPF& bpf;
+        ebpf::StatusTuple status;
+        std::string program;
+        std::vector<std::string> cflags;
+        std::vector<ebpf::USDT> usdt;
+        
+        void Execute() override {
+            status = bpf.init(program, cflags, usdt);
+        }
+
+        void OnOK() override {
+            Napi::HandleScope scope(Env());
+            Callback().Call({ WrapStatus(Env(), status) });
+        }
+    };
+
+    void InitAsync(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        Napi::Function callback (env, info[a++]);
+        auto program = GetString(env, info[a++]);
+        Napi::Array cflags (env, info[a++]);
+        Napi::Array usdt (env, info[a++]);
+
+        std::vector<std::string> cflags_;
+        for (size_t i = 0; i < cflags.Length(); i++) {
+            cflags_.push_back(GetString(env, cflags.Get(i)));
+        }
+        std::vector<ebpf::USDT> usdt_;
+        for (size_t i = 0; i < usdt.Length(); i++) {
+            Napi::Object item (env, usdt.Get(i));
+            usdt_.push_back(ParseUSDT(env, item));
+        }
+        (new InitWorker(*this, callback, program, cflags_, usdt_))->Queue();
     }
 
     Napi::Value InitUsdt(const CallbackInfo& info) {

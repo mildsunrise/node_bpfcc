@@ -38,18 +38,68 @@ export enum ProbeAttachType {
 }
 
 export interface Options {
+    /** Compilation flags */
     cflags?: string[]
+    /** USDT probe definitions */
     usdt?: USDT[]
+}
+
+/**
+ * Compile a program and load it into the kernel.
+ * 
+ * **Note:** This is a heavy operation, use [[load]]
+ * to avoid blocking the event loop.
+ *
+ * @param program C code to compile
+ * @param options Additional options
+ * @returns Loaded program instance
+ */
+export function loadSync(program: string, options?: Options) {
+    options = options || {}
+    const bpf = new BPF()
+    bpf.initSync(program, options.cflags || [], options.usdt || [])
+    return bpf
+}
+
+/**
+ * Compile a program and load it into the kernel.
+ *
+ * @param program C code to compile
+ * @param options Additional options
+ * @returns Promise for loaded program instance
+ */
+export function load(program: string, options?: Options) {
+    options = options || {}
+    const bpf = new BPF()
+    return bpf.init(program, options.cflags || [], options.usdt || [])
+        .then(() => bpf)
 }
 
 export class BPF {
     private _bpf: any
+
+    /**
+     * Constructs an unloaded program holder. U
+     * Most users will want [[load]] or [[loadSync]] instead.
+     */
     constructor() {
         this._bpf = new native.BPF()
     }
 
+    /**
+     * (Internal function, use [[loadSync]] instead)
+     */
+    initSync(program: string, cflags: string[], usdt: USDT[]) {
+        return checkStatus(this._bpf.initSync(program, cflags, usdt))
+    }
+
+    /**
+     * (Internal function, use [[load]] instead)
+     */
     init(program: string, cflags: string[], usdt: USDT[]) {
-        return checkStatus(this._bpf.init(program, cflags, usdt))
+        return new Promise(resolve =>
+            this._bpf.initAsync(resolve, program, cflags, usdt)
+        ).then(checkStatus)
     }
 
     initUsdt(usdt: USDT) {
@@ -138,11 +188,4 @@ export class BPF {
     getSyscallFnName(name: string): string {
         return this._bpf.getSyscallFnName(name)
     }
-}
-
-export function init(program: string, options?: Options) {
-    options = options || {}
-    const bpf = new BPF()
-    bpf.init(program, options.cflags || [], options.usdt || [])
-    return bpf
 }
