@@ -4,7 +4,6 @@
     "excludeProtected": true,
     "excludeExternals": true,
     "excludeNotExported": true,
-    "exclude": "**/index.ts",
     "target": "ES6",
     "listInvalidSymbolLinks": true
 }

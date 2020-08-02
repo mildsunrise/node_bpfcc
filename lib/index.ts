@@ -79,7 +79,7 @@ export class BPF {
     private _bpf: any
 
     /**
-     * Constructs an unloaded program holder. U
+     * Constructs an unloaded program holder.
      * Most users will want [[load]] or [[loadSync]] instead.
      */
     constructor() {

@@ -16,7 +16,7 @@ const bpf = loadSync(`
     }
 `)
 
-console.log('Tracing...')
+console.log('Done! Tracing...')
 setInterval(() => {
     // TODO: print histogram
 }, 2000)
