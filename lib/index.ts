@@ -2,7 +2,10 @@ const native = require('../build/Release/bpfcc_binding')
 
 export const version: string = native.version
 
+import { FD } from './util'
 import { checkStatus } from './exception'
+import { ProgramType, AttachType } from './enums'
+
 export { Code, BCCError } from './exception'
 export { ProgramType, MapType } from './enums'
 
@@ -189,4 +192,42 @@ export class BPF {
     getSyscallFnName(name: string): string {
         return this._bpf.getSyscallFnName(name)
     }
+
+    addModule(module: string) {
+        if (!this._bpf.addModule(module))
+            throw Error("Couldn't add module")
+    }
+    
+    openPerfEvent(name: string, type: number, config: bigint) {
+        return checkStatus(this._bpf.openPerfEvent(name, type, config))
+    }
+
+    closePerfEvent(name: string) {
+        return checkStatus(this._bpf.closePerfEvent(name))
+    }
+
+    loadFunction(funcName: string, type: ProgramType): FD {
+        const [ status, fd ] = this._bpf.loadFunction(funcName, type)
+        checkStatus(status)
+        return fd
+    }
+
+    unloadFunction(funcName: string) {
+        return checkStatus(this._bpf.unloadFunction(funcName))
+    }
+
+    attachFunction(programFd: FD, attachableFd: FD, attachType: AttachType, flags: bigint) {
+        return checkStatus(this._bpf.attachFunction(programFd, attachableFd, attachType, flags))
+    }
+
+    detachFunction(programFd: FD, attachableFd: FD, attachType: AttachType) {
+        return checkStatus(this._bpf.detachFunction(programFd, attachableFd, attachType))
+    }
+
+    freeBccMemory() {
+        // FIXME: better error checking?
+        if (this._bpf.freeBccMemory())
+            throw Error("Couldn't free memory")
+    }
+
 }

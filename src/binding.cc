@@ -111,6 +111,18 @@ class BPF : public Napi::ObjectWrap<BPF> {
             InstanceMethod<&BPF::DetachPerfEvent>("detachPerfEvent"),
             //InstanceMethod<&BPF::DetachPerfEventRaw>("detachPerfEventRaw"),
             InstanceMethod<&BPF::GetSyscallFnName>("getSyscallFnName"),
+
+            InstanceMethod<&BPF::AddModule>("addModule"),
+
+            InstanceMethod<&BPF::OpenPerfEvent>("openPerfEvent"),
+            InstanceMethod<&BPF::ClosePerfEvent>("closePerfEvent"),
+            
+            InstanceMethod<&BPF::LoadFunction>("loadFunction"),
+            InstanceMethod<&BPF::UnloadFunction>("unloadFunction"),
+            InstanceMethod<&BPF::AttachFunction>("attachFunction"),
+            InstanceMethod<&BPF::DetachFunction>("detachFunction"),
+
+            InstanceMethod<&BPF::FreeBccMemory>("freeBccMemory"),
         });
         Napi::FunctionReference* constructor = new Napi::FunctionReference();
         *constructor = Napi::Persistent(func);
@@ -342,6 +354,75 @@ class BPF : public Napi::ObjectWrap<BPF> {
         size_t a = 0;
         auto name = GetString(env, info[a++]);
         return Napi::String::New(env, bpf.get_syscall_fnname(name));
+    }
+
+    Napi::Value AddModule(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto module = GetString(env, info[a++]);
+        return Napi::Boolean::New(env, bpf.add_module(module));
+    }
+
+    Napi::Value OpenPerfEvent(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto name = GetString(env, info[a++]);
+        auto type = GetNumber<uint32_t>(env, info[a++]);
+        auto config = GetUint64(env, info[a++]);
+        return WrapStatus(env, bpf.open_perf_event(name, type, config));
+    }
+
+    Napi::Value ClosePerfEvent(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto name = GetString(env, info[a++]);
+        return WrapStatus(env, bpf.close_perf_event(name));
+    }
+
+    // FIXME: expose perf buffer (open / close / get / poll)
+
+    Napi::Value LoadFunction(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto func_name = GetString(env, info[a++]);
+        auto type = (enum bpf_prog_type) GetNumber<uint32_t>(env, info[a++]);
+
+        int fd = -1;
+        auto ret = Napi::Array::New(env);
+        ret[0U] = WrapStatus(env, bpf.load_func(func_name, type, fd));
+        ret[1U] = Napi::Number::New(env, fd);
+        return ret;
+    }
+
+    Napi::Value UnloadFunction(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto func_name = GetString(env, info[a++]);
+        return WrapStatus(env, bpf.unload_func(func_name));
+    }
+
+    Napi::Value AttachFunction(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
+        auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
+        auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
+        auto flags = GetUint64(env, info[a++]);
+        return WrapStatus(env, bpf.attach_func(prog_fd, attachable_fd, attach_type, flags));
+    }
+
+    Napi::Value DetachFunction(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
+        auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
+        auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
+        return WrapStatus(env, bpf.detach_func(prog_fd, attachable_fd, attach_type));
+    }
+
+    Napi::Value FreeBccMemory(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        return Napi::Number::New(env, bpf.free_bcc_memory());
     }
 
 };
