@@ -4,6 +4,7 @@ export const version: string = native.version
 
 import { checkStatus } from './exception'
 export { Code, BCCError } from './exception'
+export { ProgramType, MapType } from './enums'
 
 export interface USDT {
     pid?: number
