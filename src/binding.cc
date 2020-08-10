@@ -1,9 +1,14 @@
+#include <memory>
+#include <vector>
+#include <string>
+
 #include <bcc/bcc_version.h>
 #include <bcc/BPF.h>
 
 #include <napi.h>
 
 using Napi::CallbackInfo;
+using ebpf::StatusTuple;
 
 
 std::string GetString(Napi::Env env, Napi::Value value) {
@@ -20,6 +25,10 @@ T GetNumber(Napi::Env env, Napi::Value value) {
 template<class T>
 T GetNumber(Napi::Env env, Napi::Value value, T def) {
     return value.IsUndefined() ? def : GetNumber<T>(env, value);
+}
+
+bool GetBoolean(Napi::Env env, Napi::Value value) {
+    return Napi::Boolean(env, value);
 }
 
 bpf_probe_attach_type GetAttachType(Napi::Env env, Napi::Value value) {
@@ -40,49 +49,50 @@ uint64_t GetUint64(Napi::Env env, Napi::Value value, uint64_t def) {
 }
 
 
-Napi::Value WrapStatus(Napi::Env env, ebpf::StatusTuple status) {
+Napi::Value WrapStatus(Napi::Env env, StatusTuple status) {
     if (status.ok())
         return env.Null();
     auto ret = Napi::Object::New(env);
-    ret.Set("code", Napi::Number::New(env, (double) status.code()));
-    ret.Set("msg", Napi::String::New(env, status.msg()));
+    ret["code"] = Napi::Number::New(env, (double) status.code());
+    ret["msg"] = Napi::String::New(env, status.msg());
     return ret;
 }
 
 Napi::Value FormatTableDesc(Napi::Env env, const ebpf::TableDesc& desc) {
     auto ret = Napi::Object::New(env);
-    ret.Set("name", Napi::String::New(env, desc.name));
-    ret.Set("fd", Napi::Number::New(env, desc.fd));
-    ret.Set("type", Napi::Number::New(env, desc.type));
-    ret.Set("keySize", Napi::Number::New(env, desc.key_size));
-    ret.Set("valueSize", Napi::Number::New(env, desc.leaf_size));
-    ret.Set("maxEntries", Napi::Number::New(env, desc.max_entries));
-    ret.Set("flags", Napi::Number::New(env, desc.flags));
+    ret["name"] = Napi::String::New(env, desc.name);
+    ret["fd"] = Napi::Number::New(env, desc.fd);
+    ret["type"] = Napi::Number::New(env, desc.type);
+    ret["keySize"] = Napi::Number::New(env, desc.key_size);
+    ret["valueSize"] = Napi::Number::New(env, desc.leaf_size);
+    ret["maxEntries"] = Napi::Number::New(env, desc.max_entries);
+    ret["flags"] = Napi::Number::New(env, desc.flags);
     return ret;
 }
 
 ebpf::USDT _ParseUSDT(Napi::Env env, Napi::Object obj) {
-    auto provider = GetString(env, obj.Get("provider"));
-    auto name = GetString(env, obj.Get("name"));
-    auto probe_func = GetString(env, obj.Get("probeFunc"));
+    auto provider = GetString(env, obj["provider"]);
+    auto name = GetString(env, obj["name"]);
+    auto probe_func = GetString(env, obj["probeFunc"]);
     if (obj.Has("pid") && obj.Has("binaryPath")) {
-        auto binary_path = GetString(env, obj.Get("binaryPath"));
-        auto pid = GetNumber<pid_t>(env, obj.Get("pid"));
+        auto binary_path = GetString(env, obj["binaryPath"]);
+        auto pid = GetNumber<pid_t>(env, obj["pid"]);
         return ebpf::USDT(binary_path, pid, provider, name, probe_func);
     } else if (obj.Has("pid")) {
-        auto pid = GetNumber<pid_t>(env, obj.Get("pid"));
+        auto pid = GetNumber<pid_t>(env, obj["pid"]);
         return ebpf::USDT(pid, provider, name, probe_func);
     } else if (obj.Has("binaryPath")) {
-        auto binary_path = GetString(env, obj.Get("binaryPath"));
+        auto binary_path = GetString(env, obj["binaryPath"]);
         return ebpf::USDT(binary_path, provider, name, probe_func);
     }
     throw Napi::Error::New(env, "USDT probe must supply pid or binaryPath");
 }
 
-ebpf::USDT ParseUSDT(Napi::Env env, Napi::Object obj) {
+ebpf::USDT ParseUSDT(Napi::Env env, Napi::Value x) {
+    Napi::Object obj (env, x);
     auto usdt = _ParseUSDT(env, obj);
     if (obj.Has("matchingKludge")) {
-        auto kludge = GetNumber<int>(env, obj.Get("matchingKludge"));
+        auto kludge = GetNumber<int>(env, obj["matchingKludge"]);
         int ret = usdt.set_probe_matching_kludge(kludge);
         if (ret)
             throw Napi::Error::New(env, "Invalid value for matchingKludge");
@@ -142,7 +152,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
         });
         Napi::FunctionReference* constructor = new Napi::FunctionReference();
         *constructor = Napi::Persistent(func);
-        exports.Set("BPF", func);
+        exports["BPF"] = func;
         env.SetInstanceData<Napi::FunctionReference>(constructor);
         return exports;
     }
@@ -153,6 +163,9 @@ class BPF : public Napi::ObjectWrap<BPF> {
     }
 
   private:
+
+    // INITIALIZATION
+
     std::unique_ptr<ebpf::TableStorage> ts;
     ebpf::BPF bpf;
 
@@ -227,6 +240,9 @@ class BPF : public Napi::ObjectWrap<BPF> {
         auto usdt = ParseUSDT(env, Napi::Object(env, info[a++]));
         return WrapStatus(env, bpf.init_usdt(usdt));
     }
+
+
+    // ATTACH / DETACH
 
     Napi::Value DetachAll(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -367,6 +383,9 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf.detach_perf_event(ev_type, ev_config));
     }
 
+
+    // OTHER
+
     Napi::Value GetSyscallFnName(const CallbackInfo& info) {
         Napi::Env env = info.Env();
         size_t a = 0;
@@ -398,6 +417,14 @@ class BPF : public Napi::ObjectWrap<BPF> {
     }
 
     // FIXME: expose perf buffer (open / close / get / poll)
+
+    Napi::Value FreeBccMemory(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        return Napi::Number::New(env, bpf->free_bcc_memory());
+    }
+
+
+    // FUNCTION LOADING
 
     Napi::Value LoadFunction(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -438,10 +465,8 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf.detach_func(prog_fd, attachable_fd, attach_type));
     }
 
-    Napi::Value FreeBccMemory(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        return Napi::Number::New(env, bpf.free_bcc_memory());
-    }
+
+    // MODULE INFO
 
     Napi::Value GetMaps(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -464,13 +489,13 @@ class BPF : public Napi::ObjectWrap<BPF> {
         ebpf::TableStorage::iterator it;
         if (ts->Find(ebpf::Path({bpf_module_->id(), name}), it))
             return FormatTableDesc(env, it->second);
-        return Napi::Undefined();
+        return env.Undefined();
     }
 
 };
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports.Set("version", Napi::String::New(env, LIBBCC_VERSION));
+    exports["version"] = Napi::String::New(env, LIBBCC_VERSION);
     BPF::Init(env, exports);
     return exports;
 }
