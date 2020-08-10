@@ -2,7 +2,7 @@
     "targets": [
         {
             "target_name": "bpfcc_binding",
-            "sources": [ "src/binding.cc" ],
+            "sources": [ "src/hack.cc", "src/binding.cc" ],
             "include_dirs": [
                 "<!@(node -p \"require('node-addon-api').include\")",
             ],

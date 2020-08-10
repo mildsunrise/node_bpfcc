@@ -7,6 +7,8 @@
 
 #include <napi.h>
 
+#include "hack.h"
+
 using Napi::CallbackInfo;
 using ebpf::StatusTuple;
 
