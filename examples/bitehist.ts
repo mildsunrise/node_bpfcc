@@ -1,3 +1,5 @@
+/** Block I/O size histogram */
+
 import { loadSync } from '..'
 
 // Upload BPF to kernel

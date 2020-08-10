@@ -1,3 +1,5 @@
+/** Count task switches with from and to PIDs */
+
 import { loadSync } from '..'
 import { readFileSync } from 'fs'
 
