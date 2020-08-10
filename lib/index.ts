@@ -144,10 +144,18 @@ export class BPFModule {
         this._bpf = _bpf
     }
 
+    /**
+     * Detach all functions & events.
+     * 
+     * @category Event attaching
+     */
     detachAll() {
         return checkStatus(this._bpf.detachAll())
     }
 
+    /**
+     * @category Event attaching
+     */
     attachKprobe(kernelFunc: string, probeFunc: string, options?: { kernelFuncOffset?: bigint, attachType?: ProbeAttachType, maxActive?: number }) {
         options = options || {}
         return checkStatus(this._bpf.attachKprobe(
@@ -156,11 +164,17 @@ export class BPFModule {
         ))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachKprobe(kernelFunc: string, options?: { attachType?: ProbeAttachType }) {
         options = options || {}
         return checkStatus(this._bpf.detachKprobe(kernelFunc, options.attachType))
     }
 
+    /**
+     * @category Event attaching
+     */
     attachUprobe(binaryPath: string, symbol: string, probeFunc: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
         options = options || {}
         return checkStatus(this._bpf.attachUprobe(
@@ -169,6 +183,9 @@ export class BPFModule {
         ))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachUprobe(binaryPath: string, symbol: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
         options = options || {}
         return checkStatus(this._bpf.detachUprobe(
@@ -179,6 +196,8 @@ export class BPFModule {
 
     /**
      * Convenience method, see [[attachKprobe]].
+     * 
+     * @category Event attaching
      */
     attachKretprobe(kernelFunc: string, probeFunc: string, options?: { kernelFuncOffset?: bigint, attachType?: ProbeAttachType, maxActive?: number }) {
         return this.attachKprobe(kernelFunc, probeFunc, { ...options, attachType: ProbeAttachType.RETURN })
@@ -186,6 +205,8 @@ export class BPFModule {
 
     /**
      * Convenience method, see [[detachKprobe]].
+     * 
+     * @category Event attaching
      */
     detachKretprobe(kernelFunc: string) {
         return this.detachKprobe(kernelFunc, { attachType: ProbeAttachType.RETURN })
@@ -193,6 +214,8 @@ export class BPFModule {
 
     /**
      * Convenience method, see [[attachUprobe]].
+     * 
+     * @category Event attaching
      */
     attachUretprobe(binaryPath: string, symbol: string, probeFunc: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
         return this.attachUprobe(binaryPath, symbol, probeFunc, { ...options, attachType: ProbeAttachType.RETURN })
@@ -200,45 +223,74 @@ export class BPFModule {
 
     /**
      * Convenience method, see [[detachUprobe]].
+     * 
+     * @category Event attaching
      */
     detachUretprobe(binaryPath: string, symbol: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
         return this.detachUprobe(binaryPath, symbol, { ...options, attachType: ProbeAttachType.RETURN })
     }
 
+    /**
+     * @category Event attaching
+     */
     attachUsdt(usdt: USDT, options?: { pid?: number }) {
         options = options || {}
         return checkStatus(this._bpf.attachUsdt(usdt, options.pid))
     }
 
+    /**
+     * @category Event attaching
+     */
     attachUsdtAll() {
         return checkStatus(this._bpf.attachUsdtAll())
     }
 
+    /**
+     * @category Event attaching
+     */
     detachUsdt(usdt: USDT, options?: { pid?: number }) {
         options = options || {}
         return checkStatus(this._bpf.detachUsdt(usdt, options.pid))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachUsdtAll() {
         return checkStatus(this._bpf.detachUsdtAll())
     }
 
+    /**
+     * @category Event attaching
+     */
     attachTracepoint(tracepoint: string, probeFunc: string) {
         return checkStatus(this._bpf.attachTracepoint(tracepoint, probeFunc))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachTracepoint(tracepoint: string) {
         return checkStatus(this._bpf.detachTracepoint(tracepoint))
     }
 
+    /**
+     * @category Event attaching
+     */
     attachRawTracepoint(tracepoint: string, probeFunc: string) {
         return checkStatus(this._bpf.attachRawTracepoint(tracepoint, probeFunc))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachRawTracepoint(tracepoint: string) {
         return checkStatus(this._bpf.detachRawTracepoint(tracepoint))
     }
 
+    /**
+     * @category Event attaching
+     */
     attachPerfEvent(evType: number, evConfig: number, probeFunc: string, samplePeriod: bigint, sampleFreq: bigint, options?: { pid?: number, cpu?: number, groupFd?: number }) {
         options = options || {}
         return checkStatus(this._bpf.attachPerfEvent(
@@ -247,6 +299,9 @@ export class BPFModule {
         ))
     }
 
+    /**
+     * @category Event attaching
+     */
     detachPerfEvent(evType: number, evConfig: number) {
         return checkStatus(this._bpf.detachPerfEvent(evType, evConfig))
     }
@@ -306,9 +361,17 @@ export class BPFModule {
      * Returns undefined if the map is not found.
      * 
      * @param name Map name
+     * @category Module info
      */
     findMap(name: string): TableDesc | undefined {
         return this._bpf.findMap(name)
+    }
+
+    /**
+     * Retrieves all declared functions
+     */
+    get functions(): string[] {
+        return this._bpf.getFunctions()
     }
 
     /**
@@ -316,6 +379,7 @@ export class BPFModule {
      * the given map.
      * 
      * @param name Map name
+     * @category Map access
      */
     getRawMap(name: string) {
         const desc = this.findMap(name)
@@ -324,13 +388,6 @@ export class BPFModule {
         // Have Map hold us alive, since we own the FD
         ; (desc as any).bpf = this
         return new RawMap(desc.fd, desc)
-    }
-
-    /**
-     * Retrieves all declared functions
-     */
-    get functions(): string[] {
-        return this._bpf.getFunctions()
     }
 
     /**
