@@ -2,6 +2,8 @@ const native = require('../build/Release/bpfcc_binding')
 
 export const version: string = native.version
 
+import { promisify } from 'util'
+
 import { FD } from './util'
 import { checkStatus } from './exception'
 import { ProgramType, AttachType } from './enums'
@@ -42,10 +44,27 @@ export enum ProbeAttachType {
 }
 
 export interface Options {
+    /** Module flags */
+    flags?: number
+    rwEngineEnabled?: boolean
+    /** Map namespace */
+    mapsNamespace?: string
+    allowRlimit?: boolean
+
     /** Compilation flags */
     cflags?: string[]
     /** USDT probe definitions */
     usdt?: USDT[]
+}
+
+export const defaultOptions: Options = {
+    flags: 0,
+    rwEngineEnabled: native.rwEngineEnabled,
+    mapsNamespace: "",
+    allowRlimit: true,
+
+    cflags: [],
+    usdt: [],
 }
 
 /**
@@ -64,9 +83,18 @@ export interface TableDesc {
 	flags: number
 }
 
-export interface FunctionDesc {
-    addr: bigint
-    size: bigint
+const initSync = native.BPF.prototype.initSync
+const initAsync = promisify(native.BPF.prototype.initAsync) // FIXME: does it work with 'this' bound?
+
+function genericLoad(func: any, sync: boolean, program: string, options_?: Options) {
+    const options = { ...defaultOptions, ...options_, program }
+    const bpf_ = new native.BPF()
+    const r = func.call(bpf_, options)
+    return sync ? post(bpf_) : r.then(() => post(bpf_))
+    function post(bpf_: any) {
+        const bpf = new (BPFModule as any)(bpf_)
+        return bpf
+    }
 }
 
 /**
@@ -79,11 +107,8 @@ export interface FunctionDesc {
  * @param options Additional options
  * @returns Loaded program instance
  */
-export function loadSync(program: string, options?: Options) {
-    options = options || {}
-    const bpf = new BPF()
-    bpf.initSync(program, options.cflags || [], options.usdt || [])
-    return bpf
+export function loadSync(program: string, options?: Options): BPFModule {
+    return genericLoad(initSync, true, program, options)
 }
 
 /**
@@ -93,42 +118,15 @@ export function loadSync(program: string, options?: Options) {
  * @param options Additional options
  * @returns Promise for loaded program instance
  */
-export function load(program: string, options?: Options) {
-    options = options || {}
-    const bpf = new BPF()
-    return bpf.init(program, options.cflags || [], options.usdt || [])
-        .then(() => bpf)
+export function load(program: string, options?: Options): Promise<BPFModule> {
+    return genericLoad(initAsync, false, program, options)
 }
 
-export class BPF {
+export class BPFModule {
     private _bpf: any
 
-    /**
-     * Constructs an unloaded program holder.
-     * Most users will want [[load]] or [[loadSync]] instead.
-     */
-    constructor() {
-        this._bpf = new native.BPF()
-    }
-
-    /**
-     * (Internal function, use [[loadSync]] instead)
-     */
-    initSync(program: string, cflags: string[], usdt: USDT[]) {
-        return checkStatus(this._bpf.initSync(program, cflags, usdt))
-    }
-
-    /**
-     * (Internal function, use [[load]] instead)
-     */
-    init(program: string, cflags: string[], usdt: USDT[]) {
-        return new Promise(resolve =>
-            this._bpf.initAsync(resolve, program, cflags, usdt)
-        ).then(checkStatus)
-    }
-
-    initUsdt(usdt: USDT) {
-        return checkStatus(this._bpf.initUsdt(usdt))
+    private constructor(_bpf: any) {
+        this._bpf = _bpf
     }
 
     detachAll() {
