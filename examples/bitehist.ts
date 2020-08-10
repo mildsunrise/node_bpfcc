@@ -17,6 +17,13 @@ const bpf = loadSync(`
 `)
 
 console.log('Done! Tracing...')
+const map = bpf.getRawMap('dist')
 setInterval(() => {
-    // TODO: print histogram
+    const ys = [...map.values()].map(x => x.readUInt32LE(0))
+    const maxY = Math.max(...ys)
+    const cols = 68
+    const rpad = (x: string, n: number) => ' '.repeat(Math.max(n - x.length, 0)) + x.substr(0, n)
+    console.log('\nDistribution:\n' + ys.map((y, i) =>
+        rpad(`${y}`, 8) + ' |' + '#'.repeat(Math.round(y / maxY * cols))
+    ).join('\n'))
 }, 2000)
