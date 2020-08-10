@@ -43,9 +43,21 @@ uint64_t GetUint64(Napi::Env env, Napi::Value value, uint64_t def) {
 Napi::Value WrapStatus(Napi::Env env, ebpf::StatusTuple status) {
     if (status.ok())
         return env.Null();
-    Napi::Object ret = Napi::Object::New(env);
+    auto ret = Napi::Object::New(env);
     ret.Set("code", Napi::Number::New(env, (double) status.code()));
     ret.Set("msg", Napi::String::New(env, status.msg()));
+    return ret;
+}
+
+Napi::Value FormatTableDesc(Napi::Env env, const ebpf::TableDesc& desc) {
+    auto ret = Napi::Object::New(env);
+    ret.Set("name", Napi::String::New(env, desc.name));
+    ret.Set("fd", Napi::Number::New(env, desc.fd));
+    ret.Set("type", Napi::Number::New(env, desc.type));
+    ret.Set("keySize", Napi::Number::New(env, desc.key_size));
+    ret.Set("valueSize", Napi::Number::New(env, desc.leaf_size));
+    ret.Set("maxEntries", Napi::Number::New(env, desc.max_entries));
+    ret.Set("flags", Napi::Number::New(env, desc.flags));
     return ret;
 }
 
@@ -123,6 +135,10 @@ class BPF : public Napi::ObjectWrap<BPF> {
             InstanceMethod<&BPF::DetachFunction>("detachFunction"),
 
             InstanceMethod<&BPF::FreeBccMemory>("freeBccMemory"),
+
+            // Map related
+            InstanceMethod<&BPF::GetMaps>("getMaps"),
+            InstanceMethod<&BPF::FindMap>("findMap"),
         });
         Napi::FunctionReference* constructor = new Napi::FunctionReference();
         *constructor = Napi::Persistent(func);
@@ -131,11 +147,13 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return exports;
     }
 
-    BPF(const CallbackInfo& info) : Napi::ObjectWrap<BPF>(info) {
+    BPF(const CallbackInfo& info) : Napi::ObjectWrap<BPF>(info),
+            ts(ebpf::createSharedTableStorage()), bpf(0, ts.get()) {
         // FIXME: expose constructor parameters
     }
 
   private:
+    std::unique_ptr<ebpf::TableStorage> ts;
     ebpf::BPF bpf;
 
     Napi::Value InitSync(const CallbackInfo& info) {
@@ -222,7 +240,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
         auto probe_func = GetString(env, info[a++]);
         auto kernel_func_offset = GetUint64(env, info[a++], 0);
         auto attach_type = GetAttachType(env, info[a++]);
-        auto maxactive = GetNumber<int>(env, info[a++]);
+        auto maxactive = GetNumber<int>(env, info[a++], 0);
         return WrapStatus(env, bpf.attach_kprobe(
             kernel_func, probe_func, kernel_func_offset,
             attach_type, maxactive
@@ -423,6 +441,30 @@ class BPF : public Napi::ObjectWrap<BPF> {
     Napi::Value FreeBccMemory(const CallbackInfo& info) {
         Napi::Env env = info.Env();
         return Napi::Number::New(env, bpf.free_bcc_memory());
+    }
+
+    Napi::Value GetMaps(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        auto ret = Napi::Array::New(env);
+        size_t count = 0;
+        for (auto i = ts->begin(); i != ts->end(); ++i) {
+            auto item = Napi::Array::New(env, 2);
+            item[0U] = Napi::String::New(env, i->first);
+            item[1U] = FormatTableDesc(env, i->second);
+            ret[count++] = item;
+        }
+        return ret;
+    }
+
+    Napi::Value FindMap(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        size_t a = 0;
+        auto name = GetString(env, info[a++]);
+
+        ebpf::TableStorage::iterator it;
+        if (ts->Find(ebpf::Path({bpf_module_->id(), name}), it))
+            return FormatTableDesc(env, it->second);
+        return Napi::Undefined();
     }
 
 };

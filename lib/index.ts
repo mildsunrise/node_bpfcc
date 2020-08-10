@@ -49,6 +49,27 @@ export interface Options {
 }
 
 /**
+ * Description of an eBPF map from BCC
+ * Should be compatible with `bpf.MapDesc`.
+ */
+export interface TableDesc {
+    name: string
+    fd: number
+
+	type: MapType
+	keySize: number
+	valueSize: number
+	maxEntries: number
+	/** Flags specified on map creation, see [[MapFlags]] */
+	flags: number
+}
+
+export interface FunctionDesc {
+    addr: bigint
+    size: bigint
+}
+
+/**
  * Compile a program and load it into the kernel.
  * 
  * **Note:** This is a heavy operation, use [[load]]
@@ -230,4 +251,44 @@ export class BPF {
             throw Error("Couldn't free memory")
     }
 
+    /**
+     * Retrieves all registered eBPF maps on this program
+     * and their information, as a `(path, tableDesc)` dictionary.
+     * See [[TableDesc]].
+     */
+    get maps(): Map<string, TableDesc> {
+        return new Map(this._bpf.getMaps())
+    }
+
+    /**
+     * Find the information of a map by name.
+     * Returns undefined if the map is not found.
+     * 
+     * @param name Map name
+     */
+    findMap(name: string): TableDesc | undefined {
+        return this._bpf.findMap(name)
+    }
+
+    /**
+     * Creates and returns a [[RawMap]] instance to manipulate
+     * the given map.
+     * 
+     * @param name Map name
+     */
+    getRawMap(name: string) {
+        const desc = this.findMap(name)
+        if (desc === undefined)
+            throw Error(`No map named ${name} found`)
+        // Have Map hold us alive, since we own the FD
+        ; (desc as any).bpf = this
+        return new RawMap(desc.fd, desc)
+    }
+
+    /**
+     * Retrieves all loaded functions
+     */
+    get functions(): Map<string, FunctionDesc> {
+        return new Map(this._bpf.getFunctions())
+    }
 }
