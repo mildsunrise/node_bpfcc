@@ -55,6 +55,9 @@ export interface Options {
     cflags?: string[]
     /** USDT probe definitions */
     usdt?: USDT[]
+
+    /** Call [[autoload]] after loading the source (default: true) */
+    autoload?: boolean
 }
 
 export const defaultOptions: Options = {
@@ -65,6 +68,8 @@ export const defaultOptions: Options = {
 
     cflags: [],
     usdt: [],
+
+    autoload: true,
 }
 
 /**
@@ -93,6 +98,8 @@ function genericLoad(func: any, sync: boolean, program: string, options_?: Optio
     return sync ? post(bpf_) : r.then(() => post(bpf_))
     function post(bpf_: any) {
         const bpf = new (BPFModule as any)(bpf_)
+        if (options.autoload)
+            bpf.autoload()
         return bpf
     }
 }
@@ -120,6 +127,14 @@ export function loadSync(program: string, options?: Options): BPFModule {
  */
 export function load(program: string, options?: Options): Promise<BPFModule> {
     return genericLoad(initAsync, false, program, options)
+}
+
+function ksymname(name: string): bigint | undefined {
+    return // TODO
+}
+
+function ksym(addr: bigint): string | undefined {
+    return // TODO
 }
 
 export class BPFModule {
@@ -160,6 +175,34 @@ export class BPFModule {
             binaryPath, symbol, options.symbolAddr,
             options.attachType, options.pid, options.symbolOffset
         ))
+    }
+
+    /**
+     * Convenience method, see [[attachKprobe]].
+     */
+    attachKretprobe(kernelFunc: string, probeFunc: string, options?: { kernelFuncOffset?: bigint, attachType?: ProbeAttachType, maxActive?: number }) {
+        return this.attachKprobe(kernelFunc, probeFunc, { ...options, attachType: ProbeAttachType.RETURN })
+    }
+
+    /**
+     * Convenience method, see [[detachKprobe]].
+     */
+    detachKretprobe(kernelFunc: string) {
+        return this.detachKprobe(kernelFunc, { attachType: ProbeAttachType.RETURN })
+    }
+
+    /**
+     * Convenience method, see [[attachUprobe]].
+     */
+    attachUretprobe(binaryPath: string, symbol: string, probeFunc: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
+        return this.attachUprobe(binaryPath, symbol, probeFunc, { ...options, attachType: ProbeAttachType.RETURN })
+    }
+
+    /**
+     * Convenience method, see [[detachUprobe]].
+     */
+    detachUretprobe(binaryPath: string, symbol: string, options?: { symbolAddr?: bigint, attachType?: ProbeAttachType, pid?: number, symbolOffset?: bigint }) {
+        return this.detachUprobe(binaryPath, symbol, { ...options, attachType: ProbeAttachType.RETURN })
     }
 
     attachUsdt(usdt: USDT, options?: { pid?: number }) {
@@ -284,9 +327,66 @@ export class BPFModule {
     }
 
     /**
-     * Retrieves all loaded functions
+     * Retrieves all declared functions
      */
-    get functions(): Map<string, FunctionDesc> {
-        return new Map(this._bpf.getFunctions())
+    get functions(): string[] {
+        return this._bpf.getFunctions()
+    }
+
+    /**
+     * Automatically load and attach functions beginning with
+     * special prefixes (`kprobe__`, `tracepoint__`, etc.).
+     * 
+     * By default, this is automatically called by [[load]] or [[loadSync]].
+     */
+    autoload() {
+        // Code adapted from the Python frontend //
+
+        const syscallPrefixes = [
+            'sys_',
+            '__x64_sys_',
+            '__x32_compat_sys_',
+            '__ia32_compat_sys_',
+            '__arm64_sys_',
+            '__s390x_sys_',
+            '__s390_sys_',
+        ]
+
+        // Find current system's syscall prefix by testing on the BPF syscall.
+        // If no valid value found, will return the first possible value which
+        // would probably lead to error in later API calls.
+        function getSyscallPrefix() {
+            for (const prefix of syscallPrefixes) {
+                if (ksymname(prefix + 'bpf') !== undefined)
+                    return prefix
+            }
+            return syscallPrefixes[0]
+        }
+
+        // Given a Kernel function name that represents a syscall but already has a
+        // prefix included, transform it to current system's prefix. For example,
+        // if "sys_clone" provided, the helper may translate it to "__x64_sys_clone".
+        function fixSyscallFnname(x: string) {
+            for (const prefix of syscallPrefixes) {
+                if (x.startsWith(prefix))
+                    return getSyscallPrefix() + x.substr(0, prefix.length)
+            }
+            return x
+        }
+
+        for (const fn of this.functions) {
+            const m = /^(\w+)__(.+)$/.exec(fn)
+            if (!m) continue
+            const [, prefix, name] = m
+            const prefixes: {[key: string]: () => void} = {
+                kprobe: () => this.attachKprobe(fixSyscallFnname(name), fn),
+                kretprobe: () => this.attachKretprobe(fixSyscallFnname(name), fn),
+                tracepoint: () => this.attachTracepoint(name.replace(/__/g, ':'), fn),
+                raw_tracepoint: () => this.attachRawTracepoint(name, fn),
+                // FIXME: kfunc & LSM support
+            }
+            if (Object.hasOwnProperty.call(prefixes, prefix))
+                prefixes[prefix]()
+        }
     }
 }

@@ -149,6 +149,8 @@ class BPF : public Napi::ObjectWrap<BPF> {
             // Map related
             InstanceMethod<&BPF::GetMaps>("getMaps"),
             InstanceMethod<&BPF::FindMap>("findMap"),
+
+            InstanceMethod<&BPF::GetFunctions>("getFunctions"),
         });
         Napi::FunctionReference* constructor = new Napi::FunctionReference();
         *constructor = Napi::Persistent(func);
@@ -488,6 +490,16 @@ class BPF : public Napi::ObjectWrap<BPF> {
         if (ts.Find(ebpf::Path({getModule(*bpf)->id(), name}), it))
             return FormatTableDesc(env, it->second);
         return env.Undefined();
+    }
+
+    Napi::Value GetFunctions(const CallbackInfo& info) {
+        Napi::Env env = info.Env();
+        auto bpf_module = getModule(*bpf);
+        auto count = bpf_module->num_functions();
+        auto ret = Napi::Array::New(env, count);
+        for (size_t i = 0; i < count; i++)
+            ret[i] = Napi::String::New(env, bpf_module->function_name(i));
+        return ret;
     }
 
 };
