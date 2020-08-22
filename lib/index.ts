@@ -1,15 +1,19 @@
-const native = require('../build/Release/bpfcc_binding')
-
-export const version: string = native.version
-
 import { promisify } from 'util'
+import {
+    MapType, ProgramType, AttachType, MapRef, TypeConversion,
+    RawMap, ConvMap, createMapRef,
+    RawArrayMap, ConvArrayMap,
+    RawQueueMap, ConvQueueMap,
+} from 'bpf'
 
 import { FD } from './util'
 import { checkStatus } from './exception'
-import { ProgramType, AttachType } from './enums'
 
 export { Code, BCCError } from './exception'
-export { ProgramType, MapType } from './enums'
+
+const native = require('../build/Release/bpfcc_binding')
+
+export const version: string = native.version
 
 export interface USDT {
     pid?: number
@@ -84,8 +88,16 @@ export interface TableDesc {
 	keySize: number
 	valueSize: number
 	maxEntries: number
-	/** Flags specified on map creation, see [[MapFlags]] */
+	/**
+     * Flags specified on map creation, see
+     * [MapFlags](https://bpf.alba.sh/docs/enums/mapflags.html)
+     */
 	flags: number
+}
+
+export interface BCCMapRef extends MapRef {
+    /** Program to which this module belongs */
+    bpf: BPFModule
 }
 
 const initSync = native.BPF.prototype.initSync
@@ -375,22 +387,6 @@ export class BPFModule {
     }
 
     /**
-     * Creates and returns a [[RawMap]] instance to manipulate
-     * the given map.
-     * 
-     * @param name Map name
-     * @category Map access
-     */
-    getRawMap(name: string) {
-        const desc = this.findMap(name)
-        if (desc === undefined)
-            throw Error(`No map named ${name} found`)
-        // Have Map hold us alive, since we own the FD
-        ; (desc as any).bpf = this
-        return new RawMap(desc.fd, desc)
-    }
-
-    /**
      * Automatically load and attach functions beginning with
      * special prefixes (`kprobe__`, `tracepoint__`, etc.).
      * 
@@ -445,5 +441,114 @@ export class BPFModule {
             if (Object.hasOwnProperty.call(prefixes, prefix))
                 prefixes[prefix]()
         }
+    }
+
+
+    // MAP ACCESS
+
+    /**
+     * Creates and returns a custom
+     * [MapRef](https://bpf.alba.sh/docs/interfaces/mapref.html)
+     * reference to the given map.
+     * 
+     * The reference doesn't support closing the FD, and
+     * keeps the full BPF program alive for convenience.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getMapRef(name: string): BCCMapRef {
+        const desc = this.findMap(name)
+        if (desc === undefined)
+            throw Error(`No map named ${name} found`)
+        // Use createMapRef to get info if available
+        const ref = createMapRef(desc.fd, { parameters: desc })
+        ref.close()
+        // Make ref hold us alive, since we own the FD
+        return Object.freeze({
+            ...ref, fd: desc.fd, bpf: this,
+            close() { throw Error('BCC refs do not support closing; use detachAll() to unload the program') }
+        })
+    }
+
+    /**
+     * Creates and returns a
+     * [RawMap](https://bpf.alba.sh/docs/classes/rawmap.html)
+     * instance to manipulate the given map.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getRawMap(name: string) {
+        return new RawMap(this.getMapRef(name))
+    }
+
+    /**
+     * Creates and returns a generic
+     * [IMap](https://bpf.alba.sh/docs/interfaces/imap.html)
+     * instance to manipulate the given map, using
+     * the given
+     * [conversions](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * for keys and values.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getMap<K, V>(name: string, keyConv: TypeConversion<K>, valueConv: TypeConversion<V>) {
+        return new ConvMap(this.getMapRef(name), keyConv, valueConv)
+    }
+
+    /**
+     * Creates and returns a
+     * [RawArrayMap](https://bpf.alba.sh/docs/classes/rawarraymap.html)
+     * instance to manipulate the given array map.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getRawArrayMap(name: string) {
+        return new RawArrayMap(this.getMapRef(name))
+    }
+
+    /**
+     * Creates and returns a generic
+     * [IArrayMap](https://bpf.alba.sh/docs/interfaces/iarraymap.html)
+     * instance to manipulate the given array map, using
+     * the given
+     * [conversion](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * for values.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getArrayMap<V>(name: string, valueConv: TypeConversion<V>) {
+        return new ConvArrayMap(this.getMapRef(name), valueConv)
+    }
+
+    /**
+     * Creates and returns a
+     * [RawQueueMap](https://bpf.alba.sh/docs/classes/rawqueuemap.html)
+     * instance to manipulate the given queue or stack map.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getRawQueueMap(name: string) {
+        return new RawQueueMap(this.getMapRef(name))
+    }
+
+    /**
+     * Creates and returns a generic
+     * [IQueueMap](https://bpf.alba.sh/docs/interfaces/iqueuemap.html)
+     * instance to manipulate the given queue or stack map, using
+     * the given
+     * [conversion](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * for values.
+     * 
+     * @param name Map name
+     * @category Map access
+     */
+    getQueueMap<V>(name: string, valueConv: TypeConversion<V>) {
+        return new ConvQueueMap(this.getMapRef(name), valueConv)
     }
 }

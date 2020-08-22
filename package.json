@@ -67,8 +67,12 @@
         "@types/node": "^12.0.0",
         "node-addon-api": "^3.0.1"
     },
+    "peerDependencies": {
+        "bpf": "^1.1.0"
+    },
     "devDependencies": {
         "@types/jest": "^23.3.2",
+        "bpf": "^1.1.0",
         "coveralls": "^3.0.2",
         "jest": "^26.1.0",
         "ts-jest": "^26.1.2",

@@ -10,10 +10,10 @@ First you need to [install BCC](https://github.com/iovisor/bcc/blob/master/INSTA
 sudo apt install libbpfcc-dev
 ~~~
 
-Then install this module:
+Then install this module and [`bpf`][], which is required as a peer dependency:
 
 ~~~ bash
-npm install bpfcc
+npm install bpfcc bpf
 ~~~
 
 To use it, first pass your program to `loadSync` or `load` to compile it:
@@ -52,7 +52,7 @@ const dist = bpf.getRawArrayMap('dist')
 const distLinear = bpf.getRawArrayMap('dist_linear')
 
 // Retrieve current values & parse them
-const ys = dist.getAll().map(x => x.readUInt32LE(0))
+const ys = [...dist].map(x => x.readUInt32LE(0))
 console.log(ys)
 ~~~
 
@@ -63,3 +63,7 @@ Remember you'll probably need root to run.
 
 A reference of eBPF features and minimum kernel versions required for them can be found in:
 https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md
+
+
+
+[`bpf`]: https://github.com/mildsunrise/node_bpf
