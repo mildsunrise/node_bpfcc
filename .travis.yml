@@ -1,4 +1,8 @@
 language: node_js
+dist: focal
+before_install:
+    - sudo apt update && sudo apt -y install libbpfcc-dev
+script: true # TODO: remove to enable tests
 cache:
     directories:
         - ~/.npm
