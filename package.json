@@ -25,6 +25,7 @@
         "clean": "node-gyp clean; rm -rf dist",
         "configure": "node-gyp configure",
         "build": "node-gyp build && tsc",
+        "prepare": "rm -rf dist; tsc",
         "test": "jest --coverage",
         "test:watch": "jest --coverage --watch",
         "docs": "typedoc --out docs lib/index.ts",
