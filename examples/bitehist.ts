@@ -1,6 +1,7 @@
 /** Block I/O size histogram */
 
 import { loadSync } from '..'
+import { u32type } from 'bpf'
 
 // Upload BPF to kernel
 console.log('Loading program...')
@@ -19,9 +20,9 @@ const bpf = loadSync(`
 `)
 
 console.log('Done! Tracing...')
-const map = bpf.getRawMap('dist')
+const dist = bpf.getArrayMap('dist', u32type)
 setInterval(() => {
-    const ys = [...map.values()].map(x => x.readUInt32LE(0))
+    const ys = [...dist]
     const maxY = Math.max(...ys)
     const cols = 68
     const rpad = (x: string, n: number) => ' '.repeat(Math.max(n - x.length, 0)) + x.substr(0, n)
