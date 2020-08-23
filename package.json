@@ -73,7 +73,7 @@
     },
     "devDependencies": {
         "@types/jest": "^23.3.2",
-        "bpf": "^1.1.0",
+        "bpf": "^1.2.0",
         "coveralls": "^3.0.2",
         "jest": "^26.1.0",
         "ts-jest": "^26.1.2",
