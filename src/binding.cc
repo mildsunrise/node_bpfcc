@@ -52,7 +52,7 @@ uint64_t GetUint64(Napi::Env env, Napi::Value value, uint64_t def) {
 
 
 Napi::Value WrapStatus(Napi::Env env, StatusTuple status) {
-    if (status.ok())
+    if (status.code() == 0)
         return env.Null();
     auto ret = Napi::Object::New(env);
     ret["code"] = Napi::Number::New(env, (double) status.code());
@@ -199,7 +199,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
         // FIXME: expose dev_name as option?
         auto bpf = std::make_unique<ebpf::BPF>(options.flags, nullptr, options.rw_engine_enabled, options.maps_ns, options.allow_rlimit);
         auto status = bpf->init(options.program, options.cflags, options.usdt);
-        if (status.ok())
+        if (status.code() == 0)
             this->bpf = std::move(bpf);
         return status;
     }
@@ -208,7 +208,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
       public:
         InitWorker(BPF& bpf, InitOptions& options, Napi::Function& callback)
             : AsyncWorker(bpf.Value(), callback, "bpfcc.load"),
-            bpf(bpf), options(options), status(StatusTuple::OK()) {}
+            bpf(bpf), options(options), status(0) {}
 
         BPF& bpf;
         InitOptions options;
