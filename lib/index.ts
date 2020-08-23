@@ -13,7 +13,10 @@ export { Code, BCCError } from './exception'
 
 const native = require('../build/Release/bpfcc_binding')
 
-export const version: string = native.version
+// For some !#$%#*@ reason, Ubuntu removes the
+// bcc_version.h header from their packages.
+// To avoid problems, version will not be exposed.
+//export const version: string = native.version
 
 export interface USDT {
     pid?: number

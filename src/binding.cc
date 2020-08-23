@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#include <bcc/bcc_version.h>
+//#include <bcc/bcc_version.h>
 #include <bcc/BPF.h>
 
 #include <napi.h>
@@ -505,7 +505,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
 };
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports["version"] = Napi::String::New(env, LIBBCC_VERSION);
+    //exports["version"] = Napi::String::New(env, LIBBCC_VERSION);
     exports["rwEngineEnabled"] = Napi::Boolean::New(env, ebpf::bpf_module_rw_engine_enabled());
     BPF::Init(env, exports);
     return exports;
