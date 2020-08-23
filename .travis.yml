@@ -2,7 +2,6 @@ language: node_js
 dist: focal
 before_install:
     - sudo apt update && sudo apt -y install libbpfcc-dev
-script: true # TODO: remove to enable tests
 cache:
     directories:
         - ~/.npm
@@ -11,11 +10,11 @@ notifications:
 node_js:
     - 12
 script:
-    - npm run test && npm run build
+    - true # npm run test && npm run build
 
-jobs:
-    include:
-        - stage: coverage
-          name: Coverage
-          node_js: 12
-          script: npm run test; npm run report-coverage
+# jobs:
+#     include:
+#         - stage: coverage
+#           name: Coverage
+#           node_js: 12
+#           script: npm run test; npm run report-coverage
