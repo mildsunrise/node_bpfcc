@@ -8,7 +8,6 @@
 #include <bcc/bcc_exception.h>
 #include <bcc/bcc_syms.h>
 #include <bcc/bpf_module.h>
-#include "linux/bpf.h"
 #include <bcc/libbpf.h>
 #include <bcc/table_storage.h>
 
