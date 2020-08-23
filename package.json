@@ -1,6 +1,6 @@
 {
     "name": "bpfcc",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Frontend / bindings for BPF Compiler Collection (BCC)",
     "author": "Alba Mendez <me@alba.sh>",
     "keywords": [
