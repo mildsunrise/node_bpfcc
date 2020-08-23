@@ -13,10 +13,7 @@ export { Code, BCCError } from './exception'
 
 const native = require('../build/Release/bpfcc_binding')
 
-// For some !#$%#*@ reason, Ubuntu removes the
-// bcc_version.h header from their packages.
-// To avoid problems, version will not be exposed.
-//export const version: string = native.version
+// export const version: string = native.version
 
 export interface USDT {
     pid?: number
@@ -256,9 +253,9 @@ export class BPFModule {
     /**
      * @category Event attaching
      */
-    attachUsdtAll() {
-        return checkStatus(this._bpf.attachUsdtAll())
-    }
+    // attachUsdtAll() {
+    //     return checkStatus(this._bpf.attachUsdtAll())
+    // }
 
     /**
      * @category Event attaching
@@ -271,9 +268,9 @@ export class BPFModule {
     /**
      * @category Event attaching
      */
-    detachUsdtAll() {
-        return checkStatus(this._bpf.detachUsdtAll())
-    }
+    // detachUsdtAll() {
+    //     return checkStatus(this._bpf.detachUsdtAll())
+    // }
 
     /**
      * @category Event attaching
@@ -292,16 +289,16 @@ export class BPFModule {
     /**
      * @category Event attaching
      */
-    attachRawTracepoint(tracepoint: string, probeFunc: string) {
-        return checkStatus(this._bpf.attachRawTracepoint(tracepoint, probeFunc))
-    }
+    // attachRawTracepoint(tracepoint: string, probeFunc: string) {
+    //     return checkStatus(this._bpf.attachRawTracepoint(tracepoint, probeFunc))
+    // }
 
     /**
      * @category Event attaching
      */
-    detachRawTracepoint(tracepoint: string) {
-        return checkStatus(this._bpf.detachRawTracepoint(tracepoint))
-    }
+    // detachRawTracepoint(tracepoint: string) {
+    //     return checkStatus(this._bpf.detachRawTracepoint(tracepoint))
+    // }
 
     /**
      * @category Event attaching
@@ -348,13 +345,13 @@ export class BPFModule {
         return checkStatus(this._bpf.unloadFunction(funcName))
     }
 
-    attachFunction(programFd: FD, attachableFd: FD, attachType: AttachType, flags: bigint) {
-        return checkStatus(this._bpf.attachFunction(programFd, attachableFd, attachType, flags))
-    }
+    // attachFunction(programFd: FD, attachableFd: FD, attachType: AttachType, flags: bigint) {
+    //     return checkStatus(this._bpf.attachFunction(programFd, attachableFd, attachType, flags))
+    // }
 
-    detachFunction(programFd: FD, attachableFd: FD, attachType: AttachType) {
-        return checkStatus(this._bpf.detachFunction(programFd, attachableFd, attachType))
-    }
+    // detachFunction(programFd: FD, attachableFd: FD, attachType: AttachType) {
+    //     return checkStatus(this._bpf.detachFunction(programFd, attachableFd, attachType))
+    // }
 
     freeBccMemory() {
         // FIXME: better error checking?
@@ -438,7 +435,7 @@ export class BPFModule {
                 kprobe: () => this.attachKprobe(fixSyscallFnname(name), fn),
                 kretprobe: () => this.attachKretprobe(fixSyscallFnname(name), fn),
                 tracepoint: () => this.attachTracepoint(name.replace(/__/g, ':'), fn),
-                raw_tracepoint: () => this.attachRawTracepoint(name, fn),
+                // raw_tracepoint: () => this.attachRawTracepoint(name, fn),
                 // FIXME: kfunc & LSM support
             }
             if (Object.hasOwnProperty.call(prefixes, prefix))

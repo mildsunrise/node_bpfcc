@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-//#include <bcc/bcc_version.h>
+// #include <bcc/bcc_version.h>
 #include <bcc/BPF.h>
 
 #include <napi.h>
@@ -118,15 +118,15 @@ class BPF : public Napi::ObjectWrap<BPF> {
             InstanceMethod<&BPF::AttachUprobe>("attachUprobe"),
             InstanceMethod<&BPF::DetachUprobe>("detachUprobe"),
             InstanceMethod<&BPF::AttachUsdt>("attachUsdt"),
-            InstanceMethod<&BPF::AttachUsdtAll>("attachUsdtAll"),
+            // InstanceMethod<&BPF::AttachUsdtAll>("attachUsdtAll"),
             InstanceMethod<&BPF::DetachUsdt>("detachUsdt"),
-            InstanceMethod<&BPF::DetachUsdtAll>("detachUsdtAll"),
+            // InstanceMethod<&BPF::DetachUsdtAll>("detachUsdtAll"),
 
             InstanceMethod<&BPF::AttachTracepoint>("attachTracepoint"),
             InstanceMethod<&BPF::DetachTracepoint>("detachTracepoint"),
 
-            InstanceMethod<&BPF::AttachRawTracepoint>("attachRawTracepoint"),
-            InstanceMethod<&BPF::DetachRawTracepoint>("detachRawTracepoint"),
+            // InstanceMethod<&BPF::AttachRawTracepoint>("attachRawTracepoint"),
+            // InstanceMethod<&BPF::DetachRawTracepoint>("detachRawTracepoint"),
 
             InstanceMethod<&BPF::AttachPerfEvent>("attachPerfEvent"),
             //InstanceMethod<&BPF::AttachPerfEventRaw>("attachPerfEventRaw"),
@@ -141,8 +141,8 @@ class BPF : public Napi::ObjectWrap<BPF> {
             
             InstanceMethod<&BPF::LoadFunction>("loadFunction"),
             InstanceMethod<&BPF::UnloadFunction>("unloadFunction"),
-            InstanceMethod<&BPF::AttachFunction>("attachFunction"),
-            InstanceMethod<&BPF::DetachFunction>("detachFunction"),
+            // InstanceMethod<&BPF::AttachFunction>("attachFunction"),
+            // InstanceMethod<&BPF::DetachFunction>("detachFunction"),
 
             InstanceMethod<&BPF::FreeBccMemory>("freeBccMemory"),
 
@@ -308,10 +308,10 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf->attach_usdt(usdt, pid));
     }
 
-    Napi::Value AttachUsdtAll(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        return WrapStatus(env, bpf->attach_usdt_all());
-    }
+    // Napi::Value AttachUsdtAll(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     return WrapStatus(env, bpf->attach_usdt_all());
+    // }
 
     Napi::Value DetachUsdt(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -321,10 +321,10 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf->detach_usdt(usdt, pid));
     }
 
-    Napi::Value DetachUsdtAll(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        return WrapStatus(env, bpf->detach_usdt_all());
-    }
+    // Napi::Value DetachUsdtAll(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     return WrapStatus(env, bpf->detach_usdt_all());
+    // }
 
     Napi::Value AttachTracepoint(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -341,20 +341,20 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf->detach_tracepoint(tracepoint));
     }
 
-    Napi::Value AttachRawTracepoint(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        size_t a = 0;
-        auto tracepoint = GetString(env, info[a++]);
-        auto probe_func = GetString(env, info[a++]);
-        return WrapStatus(env, bpf->attach_raw_tracepoint(tracepoint, probe_func));
-    }
+    // Napi::Value AttachRawTracepoint(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     size_t a = 0;
+    //     auto tracepoint = GetString(env, info[a++]);
+    //     auto probe_func = GetString(env, info[a++]);
+    //     return WrapStatus(env, bpf->attach_raw_tracepoint(tracepoint, probe_func));
+    // }
 
-    Napi::Value DetachRawTracepoint(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        size_t a = 0;
-        auto tracepoint = GetString(env, info[a++]);
-        return WrapStatus(env, bpf->detach_raw_tracepoint(tracepoint));
-    }
+    // Napi::Value DetachRawTracepoint(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     size_t a = 0;
+    //     auto tracepoint = GetString(env, info[a++]);
+    //     return WrapStatus(env, bpf->detach_raw_tracepoint(tracepoint));
+    // }
 
     Napi::Value AttachPerfEvent(const CallbackInfo& info) {
         Napi::Env env = info.Env();
@@ -444,24 +444,24 @@ class BPF : public Napi::ObjectWrap<BPF> {
         return WrapStatus(env, bpf->unload_func(func_name));
     }
 
-    Napi::Value AttachFunction(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        size_t a = 0;
-        auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
-        auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
-        auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
-        auto flags = GetUint64(env, info[a++]);
-        return WrapStatus(env, bpf->attach_func(prog_fd, attachable_fd, attach_type, flags));
-    }
+    // Napi::Value AttachFunction(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     size_t a = 0;
+    //     auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
+    //     auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
+    //     auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
+    //     auto flags = GetUint64(env, info[a++]);
+    //     return WrapStatus(env, bpf->attach_func(prog_fd, attachable_fd, attach_type, flags));
+    // }
 
-    Napi::Value DetachFunction(const CallbackInfo& info) {
-        Napi::Env env = info.Env();
-        size_t a = 0;
-        auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
-        auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
-        auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
-        return WrapStatus(env, bpf->detach_func(prog_fd, attachable_fd, attach_type));
-    }
+    // Napi::Value DetachFunction(const CallbackInfo& info) {
+    //     Napi::Env env = info.Env();
+    //     size_t a = 0;
+    //     auto prog_fd = GetNumber<uint32_t>(env, info[a++]);
+    //     auto attachable_fd = GetNumber<uint32_t>(env, info[a++]);
+    //     auto attach_type = (enum bpf_attach_type) GetNumber<uint32_t>(env, info[a++]);
+    //     return WrapStatus(env, bpf->detach_func(prog_fd, attachable_fd, attach_type));
+    // }
 
 
     // MODULE INFO
@@ -505,7 +505,7 @@ class BPF : public Napi::ObjectWrap<BPF> {
 };
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    //exports["version"] = Napi::String::New(env, LIBBCC_VERSION);
+    // exports["version"] = Napi::String::New(env, LIBBCC_VERSION);
     exports["rwEngineEnabled"] = Napi::Boolean::New(env, ebpf::bpf_module_rw_engine_enabled());
     BPF::Init(env, exports);
     return exports;
