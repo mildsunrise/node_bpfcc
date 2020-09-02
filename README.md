@@ -86,7 +86,7 @@ Remember you'll probably need root to run.
 
 ## Troubleshooting
 
-Remember that not all features may be available in the kernel you are running, ve if they're present in the API and typings. Trying to use a non-available feature will generally result in an `EINVAL` error.
+Remember that not all features may be available in the kernel you are running, even if they're present in the API and typings. Trying to use a non-available feature will generally result in an `EINVAL` error.
 
 A reference of eBPF features and minimum kernel versions required for them can be found **[here](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md)**.
 
