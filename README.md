@@ -1,6 +1,6 @@
 # bpfcc
 
-Node.JS frontend (aka bindings) for iovisor's [BPF Compiler Collection (BCC)](https://github.com/iovisor/bcc).
+Node.js frontend (aka bindings) for iovisor's [BPF Compiler Collection (BCC)](https://github.com/iovisor/bcc).
 
 **[💡 Examples](./examples)** &nbsp;•&nbsp; **[📚 API reference](https://bpfcc.alba.sh/docs/globals.html)**
 
