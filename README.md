@@ -9,7 +9,7 @@ Node.js frontend (aka bindings) for iovisor's [BPF Compiler Collection (BCC)](ht
 
 ### Installing
 
-First you need to [install BCC](https://github.com/iovisor/bcc/blob/master/INSTALL.md) on your system. You don't need to install everything, only the C library & development files; for instance, on Ubuntu the following should be enough:
+First you need to [install BCC](https://github.com/iovisor/bcc/blob/master/INSTALL.md) on your system. For modern distros (Ubuntu 20.04+) you can use the repository packages. You don't need to install everything, only the C library & development files; for instance, on Ubuntu the following should be enough:
 
 ~~~ bash
 sudo apt install libbpfcc-dev
