@@ -84,15 +84,15 @@ export interface TableDesc {
     name: string
     fd: number
 
-	type: MapType
-	keySize: number
-	valueSize: number
-	maxEntries: number
-	/**
+    type: MapType
+    keySize: number
+    valueSize: number
+    maxEntries: number
+    /**
      * Flags specified on map creation, see
-     * [MapFlags](https://bpf.alba.sh/docs/enums/mapflags.html)
+     * [MapFlags](https://bpf.alba.sh/docs/enums/MapFlags.html)
      */
-	flags: number
+    flags: number
 }
 
 export interface BCCMapRef extends MapRef {
@@ -448,7 +448,7 @@ export class BPFModule {
 
     /**
      * Creates and returns a custom
-     * [MapRef](https://bpf.alba.sh/docs/interfaces/mapref.html)
+     * [MapRef](https://bpf.alba.sh/docs/interfaces/MapRef.html)
      * reference to the given map.
      * 
      * The reference doesn't support closing the FD, and
@@ -473,7 +473,7 @@ export class BPFModule {
 
     /**
      * Creates and returns a
-     * [RawMap](https://bpf.alba.sh/docs/classes/rawmap.html)
+     * [RawMap](https://bpf.alba.sh/docs/classes/RawMap.html)
      * instance to manipulate the given map.
      * 
      * @param name Map name
@@ -485,10 +485,10 @@ export class BPFModule {
 
     /**
      * Creates and returns a generic
-     * [IMap](https://bpf.alba.sh/docs/interfaces/imap.html)
+     * [IMap](https://bpf.alba.sh/docs/interfaces/IMap.html)
      * instance to manipulate the given map, using
      * the given
-     * [conversions](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * [conversions](https://bpf.alba.sh/docs/interfaces/TypeConversion.html)
      * for keys and values.
      * 
      * @param name Map name
@@ -500,7 +500,7 @@ export class BPFModule {
 
     /**
      * Creates and returns a
-     * [RawArrayMap](https://bpf.alba.sh/docs/classes/rawarraymap.html)
+     * [RawArrayMap](https://bpf.alba.sh/docs/classes/RawArrayMap.html)
      * instance to manipulate the given array map.
      * 
      * @param name Map name
@@ -512,10 +512,10 @@ export class BPFModule {
 
     /**
      * Creates and returns a generic
-     * [IArrayMap](https://bpf.alba.sh/docs/interfaces/iarraymap.html)
+     * [IArrayMap](https://bpf.alba.sh/docs/interfaces/IArrayMap.html)
      * instance to manipulate the given array map, using
      * the given
-     * [conversion](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * [conversion](https://bpf.alba.sh/docs/interfaces/TypeConversion.html)
      * for values.
      * 
      * @param name Map name
@@ -527,7 +527,7 @@ export class BPFModule {
 
     /**
      * Creates and returns a
-     * [RawQueueMap](https://bpf.alba.sh/docs/classes/rawqueuemap.html)
+     * [RawQueueMap](https://bpf.alba.sh/docs/classes/RawQueueMap.html)
      * instance to manipulate the given queue or stack map.
      * 
      * @param name Map name
@@ -539,10 +539,10 @@ export class BPFModule {
 
     /**
      * Creates and returns a generic
-     * [IQueueMap](https://bpf.alba.sh/docs/interfaces/iqueuemap.html)
+     * [IQueueMap](https://bpf.alba.sh/docs/interfaces/IQueueMap.html)
      * instance to manipulate the given queue or stack map, using
      * the given
-     * [conversion](https://bpf.alba.sh/docs/interfaces/typeconversion.html)
+     * [conversion](https://bpf.alba.sh/docs/interfaces/TypeConversion.html)
      * for values.
      * 
      * @param name Map name

@@ -2,7 +2,7 @@
 
 Node.js frontend (aka bindings) for iovisor's [BPF Compiler Collection (BCC)](https://github.com/iovisor/bcc).
 
-**[💡 Examples](./examples)** &nbsp;•&nbsp; **[📚 API reference](https://bpfcc.alba.sh/docs/globals.html)**
+**[💡 Examples](./examples)** &nbsp;•&nbsp; **[📚 API reference](https://bpfcc.alba.sh/docs/modules.html)**
 
 
 ## Usage
@@ -93,5 +93,5 @@ A reference of eBPF features and minimum kernel versions required for them can b
 
 
 [`bpf`]: https://github.com/mildsunrise/node_bpf
-[`loadSync`]: https://bpfcc.alba.sh/docs/globals.html#loadsync
-[`load`]: https://bpfcc.alba.sh/docs/globals.html#load
+[`loadSync`]: https://bpfcc.alba.sh/docs/modules.html#loadSync
+[`load`]: https://bpfcc.alba.sh/docs/modules.html#load
